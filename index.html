@@ -1,0 +1,184 @@
+
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MARC'S KINOWELT</title>
+<style>
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: #080b12;
+  color: #f0f2f7;
+  font-family: Arial, sans-serif;
+  text-align: center;
+}
+header {
+  padding: 30px 12px;
+  background: linear-gradient(135deg,#101a2b,#080b12);
+  border-bottom: 1px solid #64748b;
+}
+h1 {
+  margin: 0;
+  letter-spacing: 3px;
+  color: #dce6f5;
+}
+.subtitle {
+  color: #8bbce8;
+  letter-spacing: 2px;
+  margin-top: 12px;
+}
+main {
+  max-width: 1100px;
+  margin: auto;
+  padding: 24px 12px;
+}
+.screen {
+  width: 100%;
+  aspect-ratio: 16/9;
+  background: #000;
+  border: 2px solid #9eafc8;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 0 28px #315b9b55;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+iframe, video {
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+.placeholder {
+  color: #8da1bd;
+  font-size: 20px;
+}
+.controls {
+  margin: 25px auto;
+  padding: 20px;
+  background: #121b2a;
+  border: 1px solid #35445c;
+  border-radius: 12px;
+}
+input {
+  width: min(100%,650px);
+  padding: 13px;
+  background: #080d17;
+  color: white;
+  border: 1px solid #7185a2;
+  border-radius: 7px;
+  font-size: 15px;
+}
+button {
+  margin: 7px;
+  padding: 12px 20px;
+  background: #243c60;
+  color: white;
+  border: 1px solid #8aa7d0;
+  border-radius: 7px;
+  cursor: pointer;
+}
+button:hover { background: #375b8d; }
+.note { color: #9cabc1; font-size: 13px; }
+footer { padding: 25px; color: #8495ac; }
+</style>
+</head>
+<body>
+<header>
+  <h1>MARC'S KINOWELT</h1>
+  <div class="subtitle">WATCH TOGETHER · FEEL TOGETHER</div>
+</header>
+
+<main>
+  <section class="screen" id="screen">
+    <div class="placeholder">🎬 Die Vorstellung beginnt gleich ...</div>
+  </section>
+
+  <section class="controls">
+    <h2>🎞️ Kinosteuerung</h2>
+    <p>YouTube-Link oder direkte MP4-Adresse</p>
+    <input id="filmUrl" placeholder="Film-Adresse einfügen">
+    <div>
+      <button onclick="loadFilm()">▶ Film laden</button>
+      <button onclick="togglePlayback()">⏯ Play / Pause</button>
+      <button onclick="stopFilm()">■ Stop</button>
+    </div>
+    <p class="note" id="status">Bereit für die erste Vorstellung</p>
+  </section>
+</main>
+
+<footer>MARC'S KINOWELT · CINEMA EXPERIENCE</footer>
+
+<script>
+let player = null;
+
+function youtubeId(url) {
+  try {
+    const u = new URL(url);
+    const host = u.hostname.toLowerCase();
+    if (host === "youtu.be" || host === "www.youtu.be")
+      return u.pathname.split("/")[1];
+    if (["youtube.com","www.youtube.com",
+         "m.youtube.com","www.youtube-nocookie.com"].includes(host)) {
+      if (u.pathname === "/watch") return u.searchParams.get("v");
+      const match = u.pathname.match(/^\/(embed|shorts|live)\/([^/]+)/);
+      return match ? match[2] : null;
+    }
+  } catch(e) {}
+  return null;
+}
+
+function loadFilm() {
+  const url = document.getElementById("filmUrl").value.trim();
+  const screen = document.getElementById("screen");
+  const status = document.getElementById("status");
+  const id = youtubeId(url);
+  player = null;
+
+  if (id && /^[\w-]{11}$/.test(id)) {
+    const iframe = document.createElement("iframe");
+    iframe.src = "https://www.youtube-nocookie.com/embed/" +
+      encodeURIComponent(id) + "?enablejsapi=1";
+    iframe.allow = "autoplay; encrypted-media; fullscreen; picture-in-picture";
+    iframe.allowFullscreen = true;
+    screen.replaceChildren(iframe);
+    status.textContent = "YouTube geladen – Wiedergabe im Player bedienen";
+  } else if (/^https:\/\/.+\.mp4(?:[?#].*)?$/i.test(url)) {
+    const video = document.createElement("video");
+    video.src = url;
+    video.controls = true;
+    video.playsInline = true;
+    screen.replaceChildren(video);
+    player = video;
+    status.textContent = "MP4 geladen";
+  } else {
+    status.textContent = "Bitte gültigen YouTube- oder HTTPS-MP4-Link eingeben";
+  }
+}
+
+function togglePlayback() {
+  if (!player) {
+    document.getElementById("status").textContent =
+      "Bei YouTube bitte die Steuerung im Videofenster verwenden";
+    return;
+  }
+  if (player.paused) player.play().catch(() => {});
+  else player.pause();
+}
+
+function stopFilm() {
+  if (player) {
+    player.pause();
+    player.removeAttribute("src");
+    player.load();
+  }
+  player = null;
+  document.getElementById("screen").innerHTML =
+    '<div class="placeholder">🎬 Vorstellung beendet</div>';
+  document.getElementById("status").textContent = "Bereit";
+}
+</script>
+</body>
+</html>
